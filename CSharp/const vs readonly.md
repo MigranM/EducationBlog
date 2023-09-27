@@ -16,22 +16,22 @@
 ```c#
         public class WebClient
         {
-            public const string URLTooLongMessage = "Request URL too long";
+            public const string UrlTooLongMessage = "Request URL was too long";
 
             public WebClient()
             {
-                //some logic
+                // some logic here
             }
 
-            public bool getResponse(string request,  out string errorCode, out string errorMessage)
+            public bool GetResponse(string request,  out string errorCode, out string errorMessage)
             {
                 bool Succes = true;
                 errorCode = string.Empty;
                 errorMessage = string.Empty;
 
-                //more logic
+                // more logic here
 
-                if (request.Length> 2048)
+                if (request.Length > 2048)
                 {
                     errorCode = "404.14";
                     errorMessage = "Request URL too long";
@@ -52,15 +52,15 @@
 
 ```c#
     public class SalaryCalculator
-        {
-            private const decimal PersonalIncomeTaxOnRegularSalary = 13m;
+    {
+        private const decimal personalIncomeTaxOnRegularSalary = 0.13m;
 
-            public static decimal GetSalaryAfterTax(decimal salary)
-            {
-                salary = salary * (1 - PersonalIncomeTaxOnRegularSalary);
-                return salary;
-            }
+        public static decimal GetSalaryAfterTax(decimal salary)
+        {
+            salary = salary * (1 - PersonalIncomeTaxOnRegularSalary);
+            return salary;
         }
+    }
 ```
 
 ------
@@ -77,24 +77,22 @@
 Например, у нас есть необходимость создавать объекты вражеских сущностей с определенными параметрами. Здоровье и показатели защиты данной сущности могут быть изменены в процессе выполнения программы, однако изменение имени данной сущности будет запрещено.
 
 ```c#
-   public class EnemyEntity
+    public class EnemyEntity
+    {
+        public readonly string Name;
+        public int Health;
+        public int Defence;
+
+        public EnemyEntity(string name, int health, int defence)
         {
-            public readonly string name;
-            public int health;
-            public int defence;
-
-            public EnemyEntity(string name, int health, int defence)
-            {
-                this.name = name;
-                this.health = health;
-                this.defence = defence;
-            }
-
-            //Entity actions
+            this.Name = name;
+            this.Health = health;
+            this.Defence = defence;
         }
+    }
 ```
 
-Главным отличием *readonly* от const является то, что в *readonly* поле можно поместить данные времени выполнения, что позволяет создавать выражения как типа:
+Главным отличием *readonly* от const является то, что в *readonly* поле можно поместить данные времени выполнения, что позволяет создавать выражения типа:
 
 ```c#
 public static readonly uint timeStamp = (uint)DateTime.Now.Ticks;
@@ -107,34 +105,72 @@ public static readonly uint timeStamp = (uint)DateTime.Now.Ticks;
 Поля с ключевыми словами static *readonly* аналогичны полям с ключевым словом *const*, но, как уже было сказано выше, могут быть проинициализированы во время выполнения. К примеру, можно записать временную метку первого обращения к классу при помощи статического конструктора. Для примера слегка расширим класс *EnemyEntity* из предыдущего примера:
 
 ```c#
-public class EnemyEntity
+    public class EnemyEntity
+    {
+        public static readonly DateTime FirstEntitySpawnTime;
+        public readonly DateTime EntitySpawnTime;
+
+        public readonly string Name;
+        public int Health;
+        public int Defence;
+
+        static EnemyEntity()
         {
-            public static readonly DateTime FirstEntitySpawnTime;
-            public readonly DateTime EntitySpawnTime;
-
-            public readonly string name;
-            public int health;
-            public int defence;
-
-            static EnemyEntity()
-            {
-                //set spawn time of first ever entity
-                FirstEntitySpawnTime = DateTime.Now; 
-            }
-
-            public EnemyEntity(string name, int health, int defence)
-            {
-                //set entity spawn time
-                EntitySpawnTime = DateTime.Now;
-
-                this.name = name;
-                this.health = health;
-                this.defence = defence;
-            }
-
-            //Entity actions
+            //set spawn time of first ever entity
+            FirstEntitySpawnTime = DateTime.Now; 
         }
+
+        public EnemyEntity(string name, int health, int defence)
+        {
+            //set entity spawn time
+            EntitySpawnTime = DateTime.Now;
+
+            this.Name = name;
+            this.Health = health;
+            this.Defence = defence;
+        }
+    }
 ```
 
 Теперь при создании первого экземпляра класса *EnemyEntity* сработает статический конструктор, который запишет временную метку "Спавна" первой сущности.
 
+## Генерация кода
+
+Предположим, есть необходимость генерировать код шаблоном t4 для описания данных БД.
+
+Тут необходимо выбрать нужный подход:
+
+| Использовать const, если: | Использовать readonly, если: |
+|---|---|
+| Типы данных: примитивы, Nullable не допускается | Типы данных любые, в том числе Nullable<T> |
+| Необходимо использовать в switch-case конструкциях | Нет необходимости использовать в switch-case конструкциях |
+
+Например, если мы хотим сгенерировать код по некому перечислению в БД, в котором не допускаются nullable значения, то удобнее воспользоваться const, что позволит потом использовать эти данные в местах времени компиляции:
+
+```c#
+
+    /// Перечисление типов объектов системы.
+    public static class Records
+    {
+        public static class Card
+        {
+                public const int ID = 0;
+                public const string Name = "Card";
+        }
+        public static class File
+        {
+                public const int ID = 1;
+                public const string Name = "File";
+        }
+        public static class Task
+        {
+                public const int ID = 2;
+                public const string Name = "Task";
+        }
+        public static class Dialog
+        {
+                public const int ID = 3;
+                public const string Name = "Dialog";
+        }
+    }
+```
